@@ -15,10 +15,11 @@ const semver = require('semver');
 const userHome = require('user-home');
 const pathExists = require('path-exists').sync;
 const colors = require('colors/safe');
+// const init = require('@touch-cli/init');
+const exec = require('@touch-cli/exec');
 const log = require('@touch-cli/log');
 const pkg = require('../package.json');
 const constants = require('./constants');
-const init = require('@touch-cli/init');
 
 let args = undefined;
 
@@ -26,16 +27,21 @@ const program = new commander.Command();
 
 function core() {
   try{
-    checkPkgVersion();
-    checkNodeVersion();
-    checkUserHome();
-    checkEnv();
+    prepare();
     registerCommand();
-    // checkInputArg()
-    // checkGlobalUpdate()
   }catch(err) {
     log.error(err.message)
   }
+}
+
+// 准备函数
+function prepare() {
+  checkPkgVersion();
+  checkNodeVersion();
+  checkUserHome();
+  checkEnv();
+  // checkInputArg()
+  // checkGlobalUpdate()
 }
 
 // 获取脚手架版本
@@ -70,17 +76,6 @@ function checkUserHome() {
   if (!userHome || !pathExists(userHome)) {
     throw new Error(colors.red('当前用户不存在主目录！'))
   }
-}
-
-// 检查用户入参，如果存在debug，则修改log level
-function checkInputArg() {
-  const minimist = require('minimist');
-  args = minimist(process.argv.slice(2));
-  checkArgs()
-}
-
-function checkArgs() {
-  log.level = args.debug ? 'verbose': 'info'
 }
 
 // 检查用户环境变量
@@ -122,17 +117,23 @@ function registerCommand() {
     .name(Object.keys(pkg.bin)[0])
     .usage('<command> [options]')
     .version(pkg.version)
-    .option('-d, --debug', '是否开启调试模式', false);
+    .option('-d, --debug', '是否开启调试模式', false)
+    .option('-tp, --targetPath <targetPath>', '是否启用本地调试文件路径', '');
 
 // 注册 init 命令
   program
     .command('init [projectName]')
     .option('-f, --force', '是否强制初始化项目')
-    .action(init);
+    .action(exec);
 
   // 监听是否开启debug
   program.on('option:debug', function() {
     log.level = program._optionValues.debug ? 'verbose' : 'info';
+  });
+
+  // 监听 targetPath
+  program.on("option:targetPath", function() {
+    process.env.CLI_TARGET_PATH = program._optionValues.targetPath
   });
 
   // 检测未知命令
@@ -141,12 +142,23 @@ function registerCommand() {
     console.log(color.red('未知命令：' + obj[0]));
     console.log(colors.red('可用命令：' + availableCommands.join(',')));
   });
+
   // 默认命令
-  // console.log(program);
   if(process.argv.length < 1) {
     program.outputHelp();
     console.log()
   }
   
   program.parse(process.argv)
+}
+
+// 检查用户入参，如果存在debug，则修改log level
+function checkInputArg() {
+  const minimist = require('minimist');
+  args = minimist(process.argv.slice(2));
+  checkArgs()
+}
+
+function checkArgs() {
+  log.level = args.debug ? 'verbose': 'info'
 }

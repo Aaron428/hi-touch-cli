@@ -18,8 +18,9 @@
   ],
   "dependencies": {
     "@touch-cli/get-npm-info": "file:../../utils/get-npm-info",
-    "@touch-cli/log": "file:../../utils/log",
     "@touch-cli/utils": "file:../../utils/utils",
+    "@touch-cli/log": "file:../../utils/log",
+    "@touch-cli/exec": "file:../exec",
     "@touch-cli/init": "file:../../commands/init",
     "colors": "^1.4.0",
     "commander": "^7.2.0",
